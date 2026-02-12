@@ -1,6 +1,6 @@
 [project]
 name = "simple-pg-vm-agent"
-version = "0.1.0"
+version = "0.0.1"
 description = "Реализация простейшего PostgreSQL VM агента как части DBaaS сервиса (в учебных целях)"
 readme = "README.md"
 requires-python = ">=3.13"
