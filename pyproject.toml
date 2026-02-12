@@ -9,3 +9,13 @@ dependencies = [
     "pydantic>=2.12.5",
     "uvicorn>=0.40.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+src = ["src"]
