@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, UTC
 import uvicorn
 from fastapi import FastAPI
-from models import Task, TaskStatus
+from models import Task, TaskStatus, TaskType, CreateDB
 from task_queue import tasks, queue
 from worker import start_worker
 
@@ -18,14 +18,6 @@ async def health():
     return {"status": "ok"}
 
 
-@app.post("/tasks")
-async def create_task() -> str:
-    task = Task(id=str(uuid.uuid4()), status=TaskStatus.NEW, created_at=datetime.now(UTC))
-    tasks[task.id] = task
-    await queue.put(task.id)
-    return task.id
-
-
 @app.get("/tasks")
 async def list_tasks() -> list[Task]:
     return list(tasks.values())
@@ -34,6 +26,20 @@ async def list_tasks() -> list[Task]:
 @app.get("/tasks/{task_id}")
 async def get_task(task_id: str) -> Task:
     return tasks[task_id]
+
+
+@app.post("/create-db")
+async def create_db(body: CreateDB) -> str:
+    task = Task(
+        id=str(uuid.uuid4()),
+        task_type=TaskType.CREATE_DB,
+        data=body,
+        status=TaskStatus.NEW,
+        created_at=datetime.now(UTC),
+    )
+    tasks[task.id] = task
+    await queue.put(task.id)
+    return task.id
 
 
 if __name__ == "__main__":
