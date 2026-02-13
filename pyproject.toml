@@ -5,8 +5,10 @@ description = "Реализация простейшего PostgreSQL VM аге�
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiodocker>=0.25.0",
     "fastapi>=0.129.0",
     "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
     "uvicorn>=0.40.0",
 ]
 
