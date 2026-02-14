@@ -4,8 +4,13 @@ from enum import StrEnum
 from pydantic import BaseModel
 
 
-class CreateDB(BaseModel):
+class CreateDBInputTaskData(BaseModel):
     version: str
+
+
+class CreateDBOutputTaskData(BaseModel):
+    image_id: str
+    container_id: str
 
 
 class TaskStatus(StrEnum):
@@ -19,16 +24,13 @@ class TaskType(StrEnum):
     CREATE_DB = "create_db"
 
 
-class Task(BaseModel):
+class Task[D, R](BaseModel):
     id: str
     task_type: TaskType
     status: TaskStatus
-    data: BaseModel
+    data: D
+    result: R | None = None
+    error: str | None = None
     created_at: datetime
     started_at: datetime | None = None
     finished_at: datetime | None = None
-
-
-class CreateDBTask(Task):
-    task_type: TaskType = TaskType.CREATE_DB
-    data: CreateDB

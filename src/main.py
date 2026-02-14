@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, UTC
 import uvicorn
 from fastapi import FastAPI
-from models import Task, TaskStatus, TaskType, CreateDB
+from models import Task, TaskStatus, TaskType, CreateDBInputTaskData
 from task_queue import tasks, queue
 from worker import start_worker
 
@@ -29,7 +29,7 @@ async def get_task(task_id: str) -> Task:
 
 
 @app.post("/create-db")
-async def create_db(body: CreateDB) -> str:
+async def create_db(body: CreateDBInputTaskData) -> str:
     task = Task(
         id=str(uuid.uuid4()),
         task_type=TaskType.CREATE_DB,
