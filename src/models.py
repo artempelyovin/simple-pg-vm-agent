@@ -4,12 +4,12 @@ from enum import StrEnum
 from pydantic import BaseModel, Field
 
 
-class CreateDBInputTaskData(BaseModel):
+class InstallPostgresInputTaskData(BaseModel):
     version: str
     port: int = Field(5432, ge=1024, le=49151)
 
 
-class CreateDBOutputTaskData(BaseModel):
+class InstallPostgresOutputTaskData(BaseModel):
     container_id: str
 
 
@@ -21,7 +21,9 @@ class TaskStatus(StrEnum):
 
 
 class TaskType(StrEnum):
-    CREATE_DB = "create_db"
+    INSTALL_POSTGRES = "install_postgres"
+    START_POSTGRES = "start_postgres"
+    STOP_POSTGRES = "stop_postgres"
 
 
 class Task[D, R](BaseModel):

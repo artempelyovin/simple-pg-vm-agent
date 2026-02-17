@@ -9,7 +9,7 @@ import aiodocker
 import uvicorn
 from fastapi import FastAPI
 
-from models import CreateDBInputTaskData, Task, TaskStatus, TaskType
+from models import InstallPostgresInputTaskData, Task, TaskStatus, TaskType
 from settings import settings
 from task_queue import queue, tasks
 from worker import worker_loop
@@ -47,11 +47,11 @@ async def get_task(task_id: str) -> Task:
     return tasks[task_id]
 
 
-@app.post("/create-db")
-async def create_db(body: CreateDBInputTaskData) -> str:
+@app.post("/install-postgres")
+async def install_postgres(body: InstallPostgresInputTaskData) -> str:
     task = Task(
         id=str(uuid.uuid4()),
-        task_type=TaskType.CREATE_DB,
+        task_type=TaskType.INSTALL_POSTGRES,
         data=body,
         status=TaskStatus.NEW,
         created_at=datetime.now(UTC),

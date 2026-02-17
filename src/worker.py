@@ -5,13 +5,15 @@ from datetime import UTC, datetime
 
 import aiodocker
 
-from models import CreateDBInputTaskData, CreateDBOutputTaskData, Task, TaskStatus, TaskType
+from models import InstallPostgresInputTaskData, InstallPostgresOutputTaskData, Task, TaskStatus, TaskType
 from task_queue import queue, tasks
 
 logger = logging.getLogger(__name__)
 
 
-async def create_db(data: CreateDBInputTaskData, docker_client: aiodocker.Docker) -> CreateDBOutputTaskData:
+async def install_postgres(
+    data: InstallPostgresInputTaskData, docker_client: aiodocker.Docker
+) -> InstallPostgresOutputTaskData:
     image = f"postgres:{data.version}"
     logger.info(f"Pull {image}")
     await docker_client.images.pull(from_image=image)
@@ -28,11 +30,11 @@ async def create_db(data: CreateDBInputTaskData, docker_client: aiodocker.Docker
     )
     logger.info(f"Start postgres container {container['id']}")
     await container.start()
-    return CreateDBOutputTaskData(container_id=container["id"])
+    return InstallPostgresOutputTaskData(container_id=container["id"])
 
 
 flow_by_task_type = {
-    TaskType.CREATE_DB: create_db,
+    TaskType.INSTALL_POSTGRES: install_postgres,
 }
 
 
