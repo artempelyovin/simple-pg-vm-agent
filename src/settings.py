@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,8 +12,8 @@ class AppSettings(BaseSettings):
 
 
 class Settings(BaseSettings):
-    app: AppSettings
-    docker: DockerSettings
+    app: AppSettings = Field(default_factory=AppSettings)
+    docker: DockerSettings = Field(default_factory=DockerSettings)
 
     model_config = SettingsConfigDict(
         env_file="envs/local.env",
