@@ -1,10 +1,11 @@
-import aiodocker
 import asyncio
 import logging
 import traceback
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 
-from models import TaskType, TaskStatus, Task, CreateDBInputTaskData, CreateDBOutputTaskData
+import aiodocker
+
+from models import CreateDBInputTaskData, CreateDBOutputTaskData, Task, TaskStatus, TaskType
 from task_queue import queue, tasks
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,6 @@ flow_by_task_type = {
 }
 
 
-
 async def process_task(task: Task, docker_client: aiodocker.Docker) -> None:
     flow = flow_by_task_type.get(task.task_type)
     if flow is None:
@@ -49,7 +49,7 @@ async def process_task(task: Task, docker_client: aiodocker.Docker) -> None:
         task.finished_at = datetime.now(UTC)
 
 
-async def worker_loop(docker_client: aiodocker.Docker):
+async def worker_loop(docker_client: aiodocker.Docker) -> None:
     logger.info("Worker started")
     while True:
         task_id = await queue.get()
@@ -58,4 +58,4 @@ async def worker_loop(docker_client: aiodocker.Docker):
         if task is None:
             logger.warning(f"Task {task_id} not found in storage")
             continue
-        asyncio.create_task(process_task(task=task, docker_client=docker_client))
+        asyncio.create_task(process_task(task=task, docker_client=docker_client))  # noqa: RUF006

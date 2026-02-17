@@ -6,7 +6,13 @@ class DockerSettings(BaseModel):
     url: str | None = None
 
 
+class AppSettings(BaseSettings):
+    host: str = "127.0.0.1"
+    port: int = 8000
+
+
 class Settings(BaseSettings):
+    app: AppSettings
     docker: DockerSettings
 
     model_config = SettingsConfigDict(

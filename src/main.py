@@ -1,25 +1,25 @@
 import asyncio
 import logging
 import uuid
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import datetime, UTC
-import uvicorn
+from datetime import UTC, datetime
+
 import aiodocker
+import uvicorn
 from fastapi import FastAPI
-from models import Task, TaskStatus, TaskType, CreateDBInputTaskData
+
+from models import CreateDBInputTaskData, Task, TaskStatus, TaskType
 from settings import settings
-from task_queue import tasks, queue
+from task_queue import queue, tasks
 from worker import worker_loop
 
 logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    if settings.docker.url:
-        docker_client = aiodocker.Docker(url=settings.docker.url)
-    else:
-        docker_client = aiodocker.Docker()
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    docker_client = aiodocker.Docker(url=settings.docker.url) if settings.docker.url else aiodocker.Docker()
     app.state.docker = docker_client
 
     worker_task = asyncio.create_task(worker_loop(docker_client=docker_client))
@@ -33,7 +33,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/health")
-async def health():
+async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
@@ -62,4 +62,4 @@ async def create_db(body: CreateDBInputTaskData) -> str:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=settings.app.host, port=settings.app.port)
