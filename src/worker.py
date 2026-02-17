@@ -12,16 +12,23 @@ logger = logging.getLogger(__name__)
 
 
 async def create_db(data: CreateDBInputTaskData, docker_client: aiodocker.Docker) -> CreateDBOutputTaskData:
-    logger.info(f"Pull postgres:{data.version}")
-    image = await docker_client.images.pull(from_image=f"postgres:{data.version}")
-    logger.info(f"Run container database with image {image.name}")
-    container = await asyncio.to_thread(
-        docker_client.containers.run,
-        image=image.id,
-        name="database",
-        detach=True,
+    image = f"postgres:{data.version}"
+    logger.info(f"Pull {image}")
+    await docker_client.images.pull(from_image=image)
+    logger.info(f"Create postgres container with image {image}")
+    container = await docker_client.containers.create(
+        config={
+            "Image": image,
+            "PortBinding": {
+                "5432/tcp": [{"HostPort": data.port}],
+            },
+            "Env": ["POSTGRES_PASSWORD=secret"],  # TODO: generate password
+        },
+        name="postgres",
     )
-    return CreateDBOutputTaskData(image_id=image.id, container_id=container.id)
+    logger.info(f"Start postgres container {container['id']}")
+    await container.start()
+    return CreateDBOutputTaskData(container_id=container["id"])
 
 
 flow_by_task_type = {

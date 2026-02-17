@@ -1,15 +1,15 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CreateDBInputTaskData(BaseModel):
     version: str
+    port: int = Field(5432, ge=1024, le=49151)
 
 
 class CreateDBOutputTaskData(BaseModel):
-    image_id: str
     container_id: str
 
 
