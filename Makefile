@@ -12,3 +12,10 @@ format:
 .PHONY: lint
 lint:
 	poetry run ruff check $(REPO_DIR)/src
+
+
+# MacOS only!
+.PHONY: restart-docker
+restart-docker:
+	osascript -e 'quit app "Docker"'
+	open -a Docker
