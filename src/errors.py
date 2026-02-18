@@ -1,25 +1,19 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
-from aiodocker.containers import DockerContainer
+
+class BasePostgresAgentError(Exception):
+    pass
 
 
-class BasePostgresAgentError(Exception, ABC):
-    @abstractmethod
-    def message(self) -> str:
-        pass
-
-
-@dataclass(frozen=True)
 class PostgresContainerNotFoundError(BasePostgresAgentError):
-    def message(self) -> str:
+    def __str__(self) -> str:
         return "Container postgres not found"
 
 
 @dataclass(frozen=True)
 class MultiplePostgresContainersError(BasePostgresAgentError):
-    containers: list[DockerContainer]
+    container_ids: list[str]
 
-    def message(self) -> str:
-        container_ids = ", ".join(c.id for c in self.containers)
+    def __str__(self) -> str:
+        container_ids = ", ".join(self.container_ids)
         return f"Multiple postgres containers found: {container_ids}"

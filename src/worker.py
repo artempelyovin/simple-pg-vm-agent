@@ -37,7 +37,8 @@ async def start_postgres(ctx: FlowContext) -> None:
     if len(containers) == 0:
         raise PostgresContainerNotFoundError
     if len(containers) > 1:
-        raise MultiplePostgresContainersError(containers=containers)
+        container_ids = [c.id for c in containers]
+        raise MultiplePostgresContainersError(container_ids=container_ids)
     container = containers[0]
     logger.info(f"Start postgres container {container.id}")
     await container.start()
@@ -48,7 +49,8 @@ async def stop_postgres(ctx: FlowContext) -> None:
     if len(containers) == 0:
         raise PostgresContainerNotFoundError
     if len(containers) > 1:
-        raise MultiplePostgresContainersError(containers=containers)
+        container_ids = [c.id for c in containers]
+        raise MultiplePostgresContainersError(container_ids=container_ids)
     container = containers[0]
     logger.info(f"Stop postgres container {container.id}")
     await container.stop()
