@@ -1,5 +1,6 @@
+import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import StrEnum
 
 import aiodocker
@@ -28,16 +29,29 @@ class TaskType(StrEnum):
     STOP_POSTGRES = "stop_postgres"
 
 
-class Task[D, R](BaseModel):
-    id: str
+class Task(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     task_type: TaskType
-    status: TaskStatus
-    data: D | None = None
-    result: R | None = None
+    status: TaskStatus = TaskStatus.NEW
+    data: BaseModel | None = None
+    result: BaseModel | None = None
     error: str | None = None
-    created_at: datetime
+    created_at: datetime = Field(default_factory=lambda _: datetime.now(UTC))
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+class InstallPostgresTask(Task):
+    data: InstallPostgresInputTaskData
+    task_type: TaskType = TaskType.INSTALL_POSTGRES
+
+
+class StartPostgresTask(Task):
+    task_type: TaskType = TaskType.START_POSTGRES
+
+
+class StopPostgresTask(Task):
+    task_type: TaskType = TaskType.STOP_POSTGRES
 
 
 @dataclass

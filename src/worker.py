@@ -2,17 +2,20 @@ import asyncio
 import logging
 import traceback
 from datetime import UTC, datetime
+from typing import cast
 
 import aiodocker
 
 from errors import MultiplePostgresContainersError, PostgresContainerNotFoundError
-from models import FlowContext, InstallPostgresOutputTaskData, Task, TaskStatus, TaskType
+from models import FlowContext, InstallPostgresInputTaskData, InstallPostgresOutputTaskData, Task, TaskStatus, TaskType
 from task_queue import queue, tasks
 
 logger = logging.getLogger(__name__)
 
 
 async def install_postgres(ctx: FlowContext) -> InstallPostgresOutputTaskData:
+    ctx.task.data = cast(InstallPostgresInputTaskData, ctx.task.data)  # noqa: TC006
+
     image = f"postgres:{ctx.task.data.version}"
     logger.info(f"Pull {image}")
     await ctx.docker.images.pull(from_image=image)

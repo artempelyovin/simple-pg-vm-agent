@@ -1,15 +1,13 @@
 import asyncio
 import logging
-import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
 
 import aiodocker
 import uvicorn
 from fastapi import FastAPI
 
-from models import InstallPostgresInputTaskData, Task, TaskStatus, TaskType
+from models import InstallPostgresInputTaskData, InstallPostgresTask, StartPostgresTask, StopPostgresTask, Task
 from settings import settings
 from task_queue import queue, tasks
 from worker import worker_loop
@@ -48,13 +46,7 @@ async def get_task(task_id: str) -> Task:
 
 @app.post("/install-postgres")
 async def install_postgres(body: InstallPostgresInputTaskData) -> str:
-    task = Task(
-        id=str(uuid.uuid4()),
-        task_type=TaskType.INSTALL_POSTGRES,
-        data=body,
-        status=TaskStatus.NEW,
-        created_at=datetime.now(UTC),
-    )
+    task = InstallPostgresTask(data=body)
     tasks[task.id] = task
     await queue.put(task.id)
     return task.id
@@ -62,12 +54,7 @@ async def install_postgres(body: InstallPostgresInputTaskData) -> str:
 
 @app.post("/start-postgres")
 async def start_postgres() -> str:
-    task = Task(
-        id=str(uuid.uuid4()),
-        task_type=TaskType.START_POSTGRES,
-        status=TaskStatus.NEW,
-        created_at=datetime.now(UTC),
-    )
+    task = StartPostgresTask()
     tasks[task.id] = task
     await queue.put(task.id)
     return task.id
@@ -75,12 +62,7 @@ async def start_postgres() -> str:
 
 @app.post("/stop-postgres")
 async def stop_postgres() -> str:
-    task = Task(
-        id=str(uuid.uuid4()),
-        task_type=TaskType.STOP_POSTGRES,
-        status=TaskStatus.NEW,
-        created_at=datetime.now(UTC),
-    )
+    task = StopPostgresTask()
     tasks[task.id] = task
     await queue.put(task.id)
     return task.id
