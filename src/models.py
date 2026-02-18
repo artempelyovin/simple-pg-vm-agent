@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
+import aiodocker
 from pydantic import BaseModel, Field
 
 
@@ -30,9 +32,15 @@ class Task[D, R](BaseModel):
     id: str
     task_type: TaskType
     status: TaskStatus
-    data: D
+    data: D | None = None
     result: R | None = None
     error: str | None = None
     created_at: datetime
     started_at: datetime | None = None
     finished_at: datetime | None = None
+
+
+@dataclass
+class FlowContext:
+    task: Task
+    docker: aiodocker.Docker

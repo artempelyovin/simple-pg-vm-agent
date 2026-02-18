@@ -5,24 +5,23 @@ from datetime import UTC, datetime
 
 import aiodocker
 
-from models import InstallPostgresInputTaskData, InstallPostgresOutputTaskData, Task, TaskStatus, TaskType
+from errors import MultiplePostgresContainersError, PostgresContainerNotFoundError
+from models import FlowContext, InstallPostgresOutputTaskData, Task, TaskStatus, TaskType
 from task_queue import queue, tasks
 
 logger = logging.getLogger(__name__)
 
 
-async def install_postgres(
-    data: InstallPostgresInputTaskData, docker_client: aiodocker.Docker
-) -> InstallPostgresOutputTaskData:
-    image = f"postgres:{data.version}"
+async def install_postgres(ctx: FlowContext) -> InstallPostgresOutputTaskData:
+    image = f"postgres:{ctx.task.data.version}"
     logger.info(f"Pull {image}")
-    await docker_client.images.pull(from_image=image)
+    await ctx.docker.images.pull(from_image=image)
     logger.info(f"Create postgres container with image {image}")
-    container = await docker_client.containers.create(
+    container = await ctx.docker.containers.create(
         config={
             "Image": image,
             "PortBinding": {
-                "5432/tcp": [{"HostPort": data.port}],
+                "5432/tcp": [{"HostPort": ctx.task.data.port}],
             },
             "Env": ["POSTGRES_PASSWORD=secret"],  # TODO: generate password
         },
@@ -33,12 +32,36 @@ async def install_postgres(
     return InstallPostgresOutputTaskData(container_id=container["id"])
 
 
+async def start_postgres(ctx: FlowContext) -> None:
+    containers = await ctx.docker.containers.list(all=True, filters={"name": ["postgres"]})
+    if len(containers) == 0:
+        raise PostgresContainerNotFoundError
+    if len(containers) > 1:
+        raise MultiplePostgresContainersError(containers=containers)
+    container = containers[0]
+    logger.info(f"Start postgres container {container.id}")
+    await container.start()
+
+
+async def stop_postgres(ctx: FlowContext) -> None:
+    containers = await ctx.docker.containers.list(filters={"name": ["postgres"]})
+    if len(containers) == 0:
+        raise PostgresContainerNotFoundError
+    if len(containers) > 1:
+        raise MultiplePostgresContainersError(containers=containers)
+    container = containers[0]
+    logger.info(f"Stop postgres container {container.id}")
+    await container.stop()
+
+
 flow_by_task_type = {
     TaskType.INSTALL_POSTGRES: install_postgres,
+    TaskType.START_POSTGRES: start_postgres,
+    TaskType.STOP_POSTGRES: stop_postgres,
 }
 
 
-async def process_task(task: Task, docker_client: aiodocker.Docker) -> None:
+async def process_task(task: Task, docker: aiodocker.Docker) -> None:
     flow = flow_by_task_type.get(task.task_type)
     if flow is None:
         logger.warning(f"Flow for the {task.id} ({task.task_type}) task is not defined")
@@ -47,7 +70,8 @@ async def process_task(task: Task, docker_client: aiodocker.Docker) -> None:
     task.started_at = datetime.now(UTC)
     try:
         logger.info(f"Run {task.id} ({task.task_type}) task")
-        result = await flow(data=task.data, docker_client=docker_client)
+        ctx = FlowContext(task=task, docker=docker)
+        result = await flow(ctx=ctx)
         task.result = result
         task.status = TaskStatus.COMPLETED
     except Exception:
@@ -58,7 +82,7 @@ async def process_task(task: Task, docker_client: aiodocker.Docker) -> None:
         task.finished_at = datetime.now(UTC)
 
 
-async def worker_loop(docker_client: aiodocker.Docker) -> None:
+async def worker_loop(docker: aiodocker.Docker) -> None:
     logger.info("Worker started")
     while True:
         task_id = await queue.get()
@@ -67,4 +91,4 @@ async def worker_loop(docker_client: aiodocker.Docker) -> None:
         if task is None:
             logger.warning(f"Task {task_id} not found in storage")
             continue
-        asyncio.create_task(process_task(task=task, docker_client=docker_client))  # noqa: RUF006
+        asyncio.create_task(process_task(task=task, docker=docker))  # noqa: RUF006

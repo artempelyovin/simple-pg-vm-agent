@@ -18,15 +18,14 @@ logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    docker_client = aiodocker.Docker(url=settings.docker.url) if settings.docker.url else aiodocker.Docker()
-    app.state.docker = docker_client
-
-    worker_task = asyncio.create_task(worker_loop(docker_client=docker_client))
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    docker = aiodocker.Docker(url=settings.docker.url) if settings.docker.url else aiodocker.Docker()
+    worker_task = asyncio.create_task(worker_loop(docker=docker))
 
     yield
+
     worker_task.cancel()
-    await docker_client.close()
+    await docker.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -53,6 +52,32 @@ async def install_postgres(body: InstallPostgresInputTaskData) -> str:
         id=str(uuid.uuid4()),
         task_type=TaskType.INSTALL_POSTGRES,
         data=body,
+        status=TaskStatus.NEW,
+        created_at=datetime.now(UTC),
+    )
+    tasks[task.id] = task
+    await queue.put(task.id)
+    return task.id
+
+
+@app.post("/start-postgres")
+async def start_postgres() -> str:
+    task = Task(
+        id=str(uuid.uuid4()),
+        task_type=TaskType.START_POSTGRES,
+        status=TaskStatus.NEW,
+        created_at=datetime.now(UTC),
+    )
+    tasks[task.id] = task
+    await queue.put(task.id)
+    return task.id
+
+
+@app.post("/stop-postgres")
+async def stop_postgres() -> str:
+    task = Task(
+        id=str(uuid.uuid4()),
+        task_type=TaskType.STOP_POSTGRES,
         status=TaskStatus.NEW,
         created_at=datetime.now(UTC),
     )
