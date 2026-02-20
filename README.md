@@ -29,5 +29,5 @@
 - [X] Установка Postgres (`docker pull` + `docker run`)
 - [X] Остановка Postgres (`docker stop`)
 - [X] Запуск Postgres (`docker start`)
-- [ ] Проверка статуса (`docker ps` + healthcheck)
+- [X] Проверка статуса (`docker ps` + healthcheck)
 - [ ] SQLite Storage 

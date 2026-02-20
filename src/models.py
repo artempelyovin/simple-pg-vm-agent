@@ -54,6 +54,13 @@ class StopPostgresTask(Task):
     task_type: TaskType = TaskType.STOP_POSTGRES
 
 
+class PostgresStatus(StrEnum):
+    OK = "ok"
+    STARTING = "starting"
+    FAILED = "failed"
+    NOT_CREATED = "not_created"
+
+
 @dataclass
 class FlowContext:
     task: Task
