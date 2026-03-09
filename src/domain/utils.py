@@ -1,7 +1,18 @@
+import datetime
+import uuid
+
 from aiodocker import Docker
 from aiodocker.containers import DockerContainer
 
-from errors import MultiplePostgresContainersError, PostgresContainerNotFoundError
+from domain.errors import MultiplePostgresContainersError, PostgresContainerNotFoundError
+
+
+def uuid4_str() -> str:
+    return str(uuid.uuid4())
+
+
+def now_utc() -> datetime.datetime:
+    return datetime.datetime.now(datetime.UTC)
 
 
 async def get_postgres_container(docker: Docker) -> DockerContainer:
